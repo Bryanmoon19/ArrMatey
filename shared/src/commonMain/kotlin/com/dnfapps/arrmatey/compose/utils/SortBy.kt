@@ -43,7 +43,7 @@ enum class SortBy(
                 InstanceType.Sonarr -> sonarrOps
                 InstanceType.Radarr -> radarrOps
                 InstanceType.Lidarr -> lidarrOps
-                InstanceType.Prowlarr -> emptyList()
+                InstanceType.Prowlarr, InstanceType.QBittorrent, InstanceType.Sabnzbd -> emptyList()
             }
 
         fun lookupEntries() = listOf(Relevance, Year, Rating)

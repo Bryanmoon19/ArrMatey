@@ -72,6 +72,7 @@ class ArrInstanceRepository(
         InstanceType.Radarr -> RadarrClient(instance, httpClient)
         InstanceType.Lidarr -> LidarrClient(instance, httpClient)
         InstanceType.Prowlarr -> ProwlarrClient(instance, httpClient)
+        InstanceType.QBittorrent, InstanceType.Sabnzbd -> throw IllegalArgumentException("Not an Arr instance")
     }
 
     private val _library = MutableStateFlow<NetworkResult<List<ArrMedia>>?>(null)

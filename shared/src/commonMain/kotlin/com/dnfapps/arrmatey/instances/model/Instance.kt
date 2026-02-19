@@ -129,5 +129,27 @@ enum class InstanceType(
         testEndpoint = "system/status",
         includeTopLevelAutomaticSearchOption = false,
         aspectRatio = AspectRatio.Cover
+    ),
+    QBittorrent(
+        resource = MR.strings.qbittorrent_description,
+        github = "https://github.com/qbittorrent/qBittorrent",
+        website = "https://www.qbittorrent.org/",
+        iconKey = "qbittorrent",
+        defaultPort = 8080,
+        supportsActivityQueue = false,
+        apiBase = "api/v2",
+        includeTopLevelAutomaticSearchOption = false,
+        aspectRatio = AspectRatio.Poster
+    ),
+    Sabnzbd(
+        resource = MR.strings.sabnzbd_description,
+        github = "https://github.com/sabnzbd/sabnzbd",
+        website = "https://sabnzbd.org/",
+        iconKey = "sabnzbd",
+        defaultPort = 8080,
+        supportsActivityQueue = false,
+        apiBase = "api",
+        includeTopLevelAutomaticSearchOption = false,
+        aspectRatio = AspectRatio.Poster
     )
 }

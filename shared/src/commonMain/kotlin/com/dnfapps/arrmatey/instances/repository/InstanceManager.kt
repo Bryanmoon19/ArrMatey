@@ -2,6 +2,7 @@ package com.dnfapps.arrmatey.instances.repository
 
 import com.dnfapps.arrmatey.arr.api.client.HttpClientFactory
 import com.dnfapps.arrmatey.database.InstanceRepository
+import com.dnfapps.arrmatey.downloads.repository.DownloadRepository
 import com.dnfapps.arrmatey.instances.model.Instance
 import com.dnfapps.arrmatey.instances.model.InstanceType
 import io.ktor.client.HttpClient
@@ -26,6 +27,10 @@ class InstanceManager(
         MutableStateFlow<Map<Long, InstanceScopedRepository>>(emptyMap())
     val instanceRepositories: StateFlow<Map<Long, InstanceScopedRepository>> = _instanceRepositories
 
+    private val _downloadRepositories =
+        MutableStateFlow<Map<Long, DownloadRepository>>(emptyMap())
+    val downloadRepositories: StateFlow<Map<Long, DownloadRepository>> = _downloadRepositories
+
     init {
         observeInstances()
     }
@@ -41,6 +46,7 @@ class InstanceManager(
 
     private fun updateRepositories(instances: List<Instance>) {
         val currentRepos = _instanceRepositories.value.toMutableMap()
+        val currentDownloadRepos = _downloadRepositories.value.toMutableMap()
         val instanceIds = instances.map { it.id }.toSet()
 
         currentRepos.keys
@@ -48,15 +54,27 @@ class InstanceManager(
             .forEach { instanceId ->
                 currentRepos.remove(instanceId)
             }
+        
+        currentDownloadRepos.keys
+            .filterNot { it in instanceIds }
+            .forEach { instanceId ->
+                currentDownloadRepos.remove(instanceId)
+            }
 
         instances.forEach { instance ->
-            if (!currentRepos.containsKey(instance.id)) {
+            if (instance.type == InstanceType.QBittorrent || instance.type == InstanceType.Sabnzbd) {
+                if (!currentDownloadRepos.containsKey(instance.id)) {
+                    val httpClient = httpClientFactory.create(instance)
+                    currentDownloadRepos[instance.id] = DownloadRepository(instance, httpClient)
+                }
+            } else if (!currentRepos.containsKey(instance.id)) {
                 val httpClient = httpClientFactory.create(instance)
                 currentRepos[instance.id] = createScopedRepository(instance, httpClient)
             }
         }
 
         _instanceRepositories.value = currentRepos
+        _downloadRepositories.value = currentDownloadRepos
     }
 
     private fun createScopedRepository(instance: Instance, httpClient: HttpClient): InstanceScopedRepository {
@@ -64,7 +82,9 @@ class InstanceManager(
 //            InstanceType.Seerr -> SeerrInstanceRepository(instance, httpClient)
             InstanceType.Sonarr,
             InstanceType.Radarr,
-            InstanceType.Lidarr -> ArrInstanceRepository(instance, httpClient)
+            InstanceType.Lidarr,
+            InstanceType.Prowlarr -> ArrInstanceRepository(instance, httpClient)
+            InstanceType.QBittorrent, InstanceType.Sabnzbd -> throw IllegalArgumentException("Not a scoped repository type")
         }
     }
 
@@ -73,6 +93,15 @@ class InstanceManager(
 
     fun getSeerrRepository(instanceId: Long): SeerrInstanceRepository? =
         _instanceRepositories.value[instanceId] as? SeerrInstanceRepository
+
+    fun getDownloadRepository(instanceId: Long): DownloadRepository? =
+        _downloadRepositories.value[instanceId]
+
+    fun getSelectedDownloadRepository(type: InstanceType): Flow<DownloadRepository?> =
+        instanceRepository.observeSelectedInstance(type)
+            .map { instance ->
+                instance?.let { getDownloadRepository(it.id) }
+            }
 
     fun getRepository(instanceId: Long): InstanceScopedRepository? =
         _instanceRepositories.value[instanceId]
