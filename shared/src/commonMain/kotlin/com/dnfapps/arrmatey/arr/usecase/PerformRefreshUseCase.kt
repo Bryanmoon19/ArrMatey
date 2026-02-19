@@ -15,7 +15,7 @@ class PerformRefreshUseCase {
             InstanceType.Sonarr -> CommandPayload.RefreshSeries(mediaId)
             InstanceType.Radarr -> CommandPayload.RefreshMovie(listOf(mediaId))
             InstanceType.Lidarr -> CommandPayload.RefreshAlbum(mediaId)
-            else -> throw UnsupportedOperationException("Cannot perform refresh on an instance of type $type")
+            InstanceType.Prowlarr -> return NetworkResult.Error(message = "Not supported for Prowlarr")
         }
         return repository.executeCommand(payload)
     }

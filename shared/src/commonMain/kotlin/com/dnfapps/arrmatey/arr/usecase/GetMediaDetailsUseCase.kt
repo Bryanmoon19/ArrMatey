@@ -48,7 +48,9 @@ class GetMediaDetailsUseCase(
                                 loadLidarrDetails(repository, mediaId, detailsResult.data)
                                     .collect { send(it) }
                             }
-                            else -> {}
+                            InstanceType.Prowlarr -> {
+                                // Prowlarr has no media details, should not be here
+                            }
                         }
                     }
                 }

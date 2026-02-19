@@ -33,6 +33,7 @@ class PreferencesStore(
     private val radarrInfoCardKey = booleanPreferencesKey("radarrInfoCard")
     private val lidarrInfoCardKey = booleanPreferencesKey("lidarrInfoCard")
     private val seerrInfoCardKey = booleanPreferencesKey("seerrInfoCard")
+    private val prowlarrInfoCardKey = booleanPreferencesKey("prowlarrInfoCard")
     private val calendarViewTypeKey = stringPreferencesKey("calendarViewType")
     private val calendarContentFilterKey = stringPreferencesKey("calendarContentFilter")
     private val calendarMonitorOnlyKey = booleanPreferencesKey("calendarMonitorOnly")
@@ -52,7 +53,7 @@ class PreferencesStore(
         InstanceType.Sonarr -> sonarrInfoCardKey
         InstanceType.Radarr -> radarrInfoCardKey
         InstanceType.Lidarr -> lidarrInfoCardKey
-//        InstanceType.Seerr -> seerrInfoCardKey
+        InstanceType.Prowlarr -> prowlarrInfoCardKey
     }
 
     private val scope = CoroutineScope(Dispatchers.IO)

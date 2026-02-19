@@ -29,7 +29,7 @@ class PerformAutomaticSearchUseCase {
                     else -> CommandPayload.Artist(mediaId)
                 }
             }
-            else -> throw UnsupportedOperationException("Cannot perform automatic search on instance of type $type")
+            InstanceType.Prowlarr -> return NetworkResult.Error(message = "Not supported for Prowlarr")
         }
         return repository.executeCommand(payload)
     }
