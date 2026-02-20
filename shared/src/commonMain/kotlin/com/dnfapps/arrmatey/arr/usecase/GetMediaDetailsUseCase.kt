@@ -51,6 +51,9 @@ class GetMediaDetailsUseCase(
                             InstanceType.Prowlarr, InstanceType.QBittorrent, InstanceType.Sabnzbd -> {
                                 // These types have no media details, should not be here
                             }
+                            else -> {
+                                send(MediaDetailsUiState.Error("Unsupported instance type"))
+                            }
                         }
                     }
                 }
