@@ -134,10 +134,12 @@ enum class InstanceType(
         resource = MR.strings.qbittorrent_description,
         github = "https://github.com/qbittorrent/qBittorrent",
         website = "https://www.qbittorrent.org/",
-        iconKey = "qbittorrent",
+        icon = MR.images.qbittorrent,
+        tabIcon = MR.images.qbittorrent_tab,
         defaultPort = 8080,
         supportsActivityQueue = false,
         apiBase = "api/v2",
+        testEndpoint = "app/version",
         includeTopLevelAutomaticSearchOption = false,
         aspectRatio = AspectRatio.Poster
     ),
@@ -145,10 +147,12 @@ enum class InstanceType(
         resource = MR.strings.sabnzbd_description,
         github = "https://github.com/sabnzbd/sabnzbd",
         website = "https://sabnzbd.org/",
-        iconKey = "sabnzbd",
+        icon = MR.images.sabnzbd,
+        tabIcon = MR.images.sabnzbd_tab,
         defaultPort = 8080,
         supportsActivityQueue = false,
         apiBase = "api",
+        testEndpoint = "json?mode=version&output=json",
         includeTopLevelAutomaticSearchOption = false,
         aspectRatio = AspectRatio.Poster
     )
