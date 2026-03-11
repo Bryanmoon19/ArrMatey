@@ -32,6 +32,7 @@ kotlin {
             implementation(libs.androidx.browser)
             implementation(libs.aboutlibraries.compose)
             implementation(libs.reorderable)
+            implementation(libs.compose.markdown)
         }
         commonMain.dependencies {
             implementation(compose.runtime)
@@ -71,8 +72,8 @@ android {
         applicationId = "com.dnfapps.arrmatey"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 5
-        versionName = "0.0.3.3"
+        versionCode = 8
+        versionName = "0.1.0"
     }
     packaging {
         resources {

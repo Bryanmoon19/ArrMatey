@@ -62,6 +62,7 @@ class InstanceManager(
     private fun createScopedRepository(instance: Instance, httpClient: HttpClient): InstanceScopedRepository {
         return when (instance.type) {
 //            InstanceType.Seerr -> SeerrInstanceRepository(instance, httpClient)
+            InstanceType.Prowlarr -> ProwlarrInstanceRepository(instance, httpClient)
             InstanceType.Sonarr,
             InstanceType.Radarr,
             InstanceType.Lidarr -> ArrInstanceRepository(instance, httpClient)
@@ -74,6 +75,9 @@ class InstanceManager(
     fun getSeerrRepository(instanceId: Long): SeerrInstanceRepository? =
         _instanceRepositories.value[instanceId] as? SeerrInstanceRepository
 
+    fun getProwlarrRepository(instanceId: Long): ProwlarrInstanceRepository? =
+        _instanceRepositories.value[instanceId] as? ProwlarrInstanceRepository
+
     fun getRepository(instanceId: Long): InstanceScopedRepository? =
         _instanceRepositories.value[instanceId]
 
@@ -84,10 +88,16 @@ class InstanceManager(
             }
 
     fun getSelectedSeerrRepository(): Flow<SeerrInstanceRepository?> = flow { emit(null) }
-//        instanceRepository.observeSelectedInstance(InstanceType.Seerr)
+    //        instanceRepository.observeSelectedInstance(InstanceType.Seerr)
 //            .map { instance ->
 //                instance?.let { getSeerrRepository(it.id) }
 //            }
+
+    fun getSelectedProwlarrRepository(): Flow<ProwlarrInstanceRepository?> =
+        instanceRepository.observeSelectedInstance(InstanceType.Prowlarr)
+            .map { instance ->
+                instance?.let { getProwlarrRepository(it.id) }
+            }
 
     fun getAllRepositories(): List<InstanceScopedRepository> {
         return _instanceRepositories.value.values.toList()

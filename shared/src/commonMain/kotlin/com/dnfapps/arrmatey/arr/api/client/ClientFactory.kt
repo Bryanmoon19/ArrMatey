@@ -1,25 +1,25 @@
 package com.dnfapps.arrmatey.arr.api.client
 
 import com.dnfapps.arrmatey.datastore.PreferencesStore
+import com.dnfapps.arrmatey.downloadclient.model.DownloadClient
 import com.dnfapps.arrmatey.instances.model.Instance
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.cookies.HttpCookies
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logger
 import io.ktor.client.plugins.logging.Logging
-import io.ktor.client.plugins.logging.SIMPLE
 import io.ktor.client.request.header
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import kotlin.math.log
 
 private const val HEADER_X_API_KEY = "X-Api-Key"
+const val DEFAULT_SLOW_TIMEOUT = 300
 
 fun createInstanceClient(
     instance: Instance?,
@@ -33,11 +33,15 @@ fun createInstanceClient(
         }
 
         install(HttpTimeout) {
+            requestTimeoutMillis = 60_000
+            connectTimeoutMillis = 60_000
+            socketTimeoutMillis = 60_000
+
             if (instance?.slowInstance == true) {
-                val customTimeout = instance.customTimeout?.let { it * 1000 } // convert seconds to millis
-                val timeout = customTimeout ?: (10 * 60_000) // 10 second default
-                requestTimeoutMillis = timeout
-                socketTimeoutMillis = timeout
+                val timeoutMillis = (instance.customTimeout ?: DEFAULT_SLOW_TIMEOUT).toLong() * 1_000
+                requestTimeoutMillis = timeoutMillis
+                connectTimeoutMillis = timeoutMillis
+                socketTimeoutMillis = timeoutMillis
             }
         }
 
@@ -59,6 +63,29 @@ fun createInstanceClient(
 class HttpClientFactory(private val json: Json, private val logger: Logger) {
     fun create(instance: Instance): HttpClient =
         createInstanceClient(instance, json, logger)
+
+    fun createDownloadClient(downloadClient: DownloadClient): HttpClient =
+        HttpClient {
+            install(ContentNegotiation) {
+                json(json)
+            }
+
+            install(HttpTimeout) {
+                requestTimeoutMillis = 30_000
+                socketTimeoutMillis = 30_000
+            }
+
+            install(HttpCookies)
+
+            install(Logging) {
+                this.logger = logger
+                level = LogLevel.ALL
+            }
+
+            defaultRequest {
+                url(downloadClient.url.trimEnd('/') + "/")
+            }
+        }
 
     fun createGeneric(): HttpClient =
         createInstanceClient(null, json, logger)

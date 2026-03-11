@@ -1,8 +1,7 @@
 package com.dnfapps.arrmatey.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.gestures.AnchoredDraggableState
-import androidx.compose.foundation.gestures.DraggableAnchors
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.filled.WifiOff
@@ -35,9 +35,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.rememberModalBottomSheetState
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,14 +47,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dnfapps.arrmatey.arr.viewmodel.MoreScreenViewModel
 import com.dnfapps.arrmatey.client.OperationStatus
-import com.dnfapps.arrmatey.entensions.getDrawableId
+import com.dnfapps.arrmatey.datastore.PreferencesStore
+import com.dnfapps.arrmatey.downloadclient.model.DownloadClient
 import com.dnfapps.arrmatey.entensions.openLink
 import com.dnfapps.arrmatey.instances.model.Instance
 import com.dnfapps.arrmatey.isDebug
@@ -64,6 +61,8 @@ import com.dnfapps.arrmatey.navigation.NavigationManager
 import com.dnfapps.arrmatey.navigation.SettingsNavigation
 import com.dnfapps.arrmatey.navigation.SettingsScreen
 import com.dnfapps.arrmatey.shared.MR
+import com.dnfapps.arrmatey.ui.components.LabelledSwitch
+import com.dnfapps.arrmatey.ui.components.LargeLabelledSwitch
 import com.dnfapps.arrmatey.ui.components.navigation.NavigationDrawerButton
 import com.dnfapps.arrmatey.ui.components.settings.AboutCard
 import com.dnfapps.arrmatey.utils.CrashManager
@@ -74,11 +73,10 @@ import com.mikepenz.aboutlibraries.ui.compose.LibraryDefaults
 import com.mikepenz.aboutlibraries.ui.compose.m3.LibrariesContainer
 import com.mikepenz.aboutlibraries.ui.compose.m3.libraryColors
 import com.mikepenz.aboutlibraries.util.withContext
+import dev.icerock.moko.resources.compose.painterResource
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
-import kotlin.math.log
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,12 +89,19 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val allInstances by viewModel.instances.collectAsStateWithLifecycle()
+    val allDownloadClients by viewModel.downloadClients.collectAsStateWithLifecycle()
     val instanceConnectionStatues by viewModel.testingStatus.collectAsStateWithLifecycle()
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
     var showLibrariesSheet by remember { mutableStateOf(false) }
 
     var confirmShareLastLog by remember { mutableStateOf<String?>(null) }
+
+    val useServiceNavLogos by viewModel.useServiceNavLogos.collectAsStateWithLifecycle()
+
+    BackHandler {
+        navigationManager.openDrawer()
+    }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -110,9 +115,7 @@ fun SettingsScreen(
             )
         }
     ) { paddingValues ->
-        PullToRefreshBox(
-            isRefreshing = instanceConnectionStatues.values.any { it is OperationStatus.InProgress },
-            onRefresh = { viewModel.refreshInstanceConnections() },
+        Box(
             modifier = Modifier.padding(paddingValues)
         ) {
             Column(
@@ -172,6 +175,57 @@ fun SettingsScreen(
                     }
                 }
 
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = mokoString(MR.strings.download_clients),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        allDownloadClients.forEach { client ->
+                            DownloadClientCard(
+                                client = client,
+                                connectionStatus = instanceConnectionStatues[client.id + 100_000],
+                                onClick = {
+                                    settingsNav.navigateTo(SettingsScreen.EditDownloadClient(client.id))
+                                }
+                            )
+                        }
+
+                        Card(
+                            shape = MaterialTheme.shapes.extraLarge,
+                            modifier = Modifier.fillMaxWidth(),
+                            onClick = {
+                                settingsNav.navigateTo(SettingsScreen.AddDownloadClient)
+                            },
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(20.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CloudDownload,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(40.dp),
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = mokoString(MR.strings.download_clients),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
+                    }
+                }
+
                 Text(
                     text = mokoString(MR.strings.user_interface),
                     style = MaterialTheme.typography.titleMedium,
@@ -198,7 +252,7 @@ fun SettingsScreen(
                             imageVector = Icons.Default.Navigation,
                             contentDescription = null,
                             modifier = Modifier.size(40.dp),
-                            tint = MaterialTheme.colorScheme.primaryContainer
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
                             text = mokoString(MR.strings.navigation_bar_configuration),
@@ -209,7 +263,19 @@ fun SettingsScreen(
                     }
                 }
 
+                LargeLabelledSwitch(
+                    label = mokoString(MR.strings.service_icons_title),
+                    sublabel = mokoString(MR.strings.service_icons_description),
+                    checked = useServiceNavLogos,
+                    onCheckedChange = {
+                        viewModel.toggleUseServiceNavLogos()
+                    }
+                )
+
                 AboutCard(
+                    onFeatureRequestClick = {
+                        context.openLink(moko.getString(MR.strings.feature_request_link))
+                    },
                     onBugReportClick = {
                         confirmShareLastLog = crashManager.getLastCrashLog()
                         if (confirmShareLastLog == null) {
@@ -341,7 +407,7 @@ fun InstanceCard(
             horizontalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Image(
-                painter = painterResource(getDrawableId(instance.type.iconKey)),
+                painter = painterResource(instance.type.icon),
                 contentDescription = instance.type.name,
                 modifier = Modifier.size(40.dp)
             )
@@ -372,6 +438,73 @@ fun InstanceCard(
                 }
                 Text(
                     text = instance.url,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            Icon(
+                imageVector = Icons.Default.ChevronRight,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun DownloadClientCard(
+    client: DownloadClient,
+    connectionStatus: OperationStatus?,
+    onClick: () -> Unit
+) {
+    Card(
+        shape = MaterialTheme.shapes.extraLarge,
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Image(
+                painter = painterResource(client.type.icon),
+                contentDescription = client.type.displayName,
+                modifier = Modifier.size(40.dp)
+            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = client.label,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Box(
+                        modifier = Modifier.size(18.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (connectionStatus) {
+                            is OperationStatus.InProgress -> CircularProgressIndicator()
+                            is OperationStatus.Success -> Icon(Icons.Default.Wifi, null)
+                            is OperationStatus.Error -> Icon(Icons.Default.WifiOff,  null, tint = Color.Red)
+                            else -> {}
+                        }
+                    }
+                }
+                Text(
+                    text = client.url,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

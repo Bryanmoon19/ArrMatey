@@ -5,6 +5,14 @@ struct ContentView: View {
     @EnvironmentObject var navigationManager: NavigationManager
     @ObservedObject private var queueViewModel = ActivityQueueViewModelS()
     @ObservedObject private var preferences = PreferencesViewModel()
+    
+    init() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithDefaultBackground()
+        
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
 
     var body: some View {
         TabView(selection: $navigationManager.selectedTab) {
@@ -15,7 +23,14 @@ struct ContentView: View {
                 }
                 .id(tabItem.name)
                 .tabItem {
-                    Label(tabItem.resource.localized(), systemImage: tabItem.iosIcon)
+                    if preferences.useServiceNavLogos, let logo = tabItem.associatedType?.tabIcon {
+                        Label(
+                            title: { Text(tabItem.resource.localized()) },
+                            icon: { logo.toImage(renderingMode: .template) }
+                        )
+                    } else {
+                        Label(tabItem.resource.localized(), systemImage: tabItem.iosIcon)
+                    }
                 }
                 .tag(tabItem)
                 .badge(badgeValue(for: tabItem))
@@ -49,41 +64,38 @@ struct AppLauncherGrid: View {
     @EnvironmentObject private var navigationManager: NavigationManager
 
     private let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
-    
-    private var hasLauncherContent: Bool {
-        preferences.tabPreferences.hiddenTabs.count > 0
-    }
 
     var body: some View {
         NavigationStack(path: $navigationManager.launcherPath) {
             ScrollView {
                 launcherContent
             }
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(action: {
                         navigationManager.showLauncher = false
+                        navigationManager.launcherPath = NavigationPath()
                     }) {
                         Image(systemName: "xmark")
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    NavigationLink(value: TabItem.settings) {
+                    Button {
+                        navigationManager.launcherPath.append(TabItem.settings)
+                    } label: {
                         Image(systemName: "gearshape.fill")
                     }
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: TabItem.self) { item in
-                TabItemContent(tabItem: item)
+                LauncherTabView(tabItem: item)
             }
             .navigationDestination(for: SettingsRoute.self) { route in
                 SettingsRouteView(route: route)
             }
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    navigationManager.applyPendingRoute()
-                }
+            .navigationDestination(for: MediaRoute.self) { route in
+                MediaRouteDestination(route: route)
             }
         }
     }
@@ -91,21 +103,75 @@ struct AppLauncherGrid: View {
     private var launcherContent: some View {
         LazyVGrid(columns: columns, spacing: 25) {
             ForEach(preferences.tabPreferences.hiddenTabs, id: \.self) { item in
-                NavigationLink(value: item) {
+                Button {
+                    print("🔘 Tapped item: \(item.name)")
+                    navigationManager.launcherPath.append(item)
+                    print("📊 Launcher path count: \(navigationManager.launcherPath.count)")
+                } label: {
                     VStack(spacing: 12) {
-                        Image(systemName: item.iosIcon)
-                            .font(.system(size: 30))
-                            .frame(width: 65, height: 65)
-                            .background(Color.accentColor.opacity(0.1))
-                            .cornerRadius(16)
+                        launcherIcon(for: item)
                         
                         Text(item.resource.localized())
                             .font(.caption)
-                            .foregroundColor(.primary)
+                            .foregroundColor(.themeOnPrimaryContainer)
                     }
+                    .frame(width: 80, height: 80)
+                    .background(.themePrimary.opacity(0.1))
+                    .cornerRadius(16)
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding(25)
+    }
+
+    @ViewBuilder
+    private func launcherIcon(for item: TabItem) -> some View {
+        if preferences.useServiceNavLogos, let logo = item.associatedType?.tabIcon {
+            logo.toImage(renderingMode: .template)
+                .foregroundColor(.themeOnPrimaryContainer)
+        } else {
+            Image(systemName: item.iosIcon)
+                .font(.system(size: 30))
+                .foregroundColor(.themeOnPrimaryContainer)
+        }
+    }
+}
+
+struct LauncherTabView: View {
+    let tabItem: TabItem
+    @EnvironmentObject var navigationManager: NavigationManager
+    
+    var body: some View {
+        Group {
+            switch tabItem {
+            case .shows:
+                SeriesTab()
+                    .environment(\.navigationContext, .launcher)
+            case .movies:
+                MoviesTab()
+                    .environment(\.navigationContext, .launcher)
+            case .music:
+                MusicTab()
+                    .environment(\.navigationContext, .launcher)
+            case .activity:
+                ActivityTab()
+                    .environment(\.navigationContext, .launcher)
+            case .calendar:
+                CalendarTab()
+                    .environment(\.navigationContext, .launcher)
+            case .downloads:
+                DownloadsTab()
+                    .environment(\.navigationContext, .launcher)
+            case .requests:
+                EmptyView()
+            case .prowlarr:
+                ProwlarrTab()
+                    .environment(\.navigationContext, .launcher)
+            case .settings:
+                SettingsScreen()
+            }
+        }
+        .navigationTitle(LocalizedStringKey(tabItem.resource.localized()))
     }
 }

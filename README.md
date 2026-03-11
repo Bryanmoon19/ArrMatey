@@ -11,6 +11,7 @@
 [![Swift](https://img.shields.io/badge/Language-Swift-orange.svg)](https://swift.org)
 
 <a href="https://www.buymeacoffee.com/owenlejeune" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-yellow.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/owenlejeune)
 
 ## Downloads
 
@@ -25,7 +26,7 @@
 ## Features
 
 ### Multi-Instance Support
-- Manage multiple Sonarr, Radarr, and Lidarr instances
+- Manage multiple Sonarr, Radarr, Lidarr, and Prowlarr instances
 - Quick instance switching
 - Custom instance labels and configurations
 
@@ -64,6 +65,9 @@
 - **Material 3/Liquid Glass Design**: Beautiful, modern UI with dynamic theming on Android and Liquid Glass on iOS
 - **Search Everywhere**: Unified search across your library
 
+### Download Client
+- **Multiple Integrations**: Support for Transmission, Deluge, qBittorrent, and SABnzbd
+
 ### Planned Features
 - [ ] Tablet/Large screen support
 - [ ] Home screen widgets
@@ -75,7 +79,6 @@
   - [ ] Bazarr
   - [ ] Kapowarr
   - [ ] tautulli
-  - [ ] prowlarr
 - and more to come
 
 ## Screenshots
@@ -122,6 +125,16 @@
   </tr>
 </table>
 
+### Instance Management
+<table>
+  <tr>
+    <td><img src="screenshots/instance_dashboard.png" width="250"/><img src="screenshots/instance_dashboard_ios.png" width="250"/></td>
+  </tr>
+  <tr>
+    <td align="center"><em>Instance Dashbaord</em></td>
+  </tr>
+</table>
+
 ## Getting Started
 
 This is a Kotlin Multiplatform project targeting Android, iOS.
@@ -165,12 +178,13 @@ Any new strings should be added to strings.xml, or plurals.xml for plural string
 3. Select your instance type (Sonarr/Radarr/Lidarr)
 4. Enter your instance details:
   - **Label**: A friendly name for this instance
-  - **Host**: Your instance URL (e.g., `http://192.168.1.100:8989`)
+  - **Host**: Your instance URL (e.g., `http://192.168.1.100:8989`, `https://service.mydomain.com`)
   - **API Key**: Found in your instance settings under General → Security
 5. (Optional) Configure advanced settings:
   - **Slow Instance**: Enable for remote instances with higher latency
   - **Custom Timeout**: Set a custom timeout in seconds (default: 60s)
   - **Custom Headers**: Add additional HTTP headers if needed
+  - **Local Endpoint**: If you use a custom domain for remoote access, you can specify the local address of your instance to use on your home network.
 6. Tap **Test Connection** to verify
 7. Save your instance
 

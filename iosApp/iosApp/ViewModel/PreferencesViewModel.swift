@@ -16,6 +16,8 @@ class PreferencesViewModel: ObservableObject {
     @Published var enableAcitivityPolling: Bool = true
     @Published var logLevel: LoggerLevel = .headers
     @Published var tabPreferences: TabPreferences = TabPreferences()
+    @Published var shouldShowReleaseNotes: Bool = false
+    @Published var useServiceNavLogos: Bool = false
     
     init() {
         self.preferenceStore = KoinBridge.shared.getPreferencesStore()
@@ -31,6 +33,8 @@ class PreferencesViewModel: ObservableObject {
         }
         preferenceStore.httpLogLevel.observeAsync { self.logLevel = $0 }
         preferenceStore.tabPreferences.observeAsync { self.tabPreferences = $0 }
+        preferenceStore.shouldShowReleaseNotes.observeAsync { self.shouldShowReleaseNotes = $0.boolValue }
+        preferenceStore.useServiceNavLogos.observeAsync { self.useServiceNavLogos = $0.boolValue }
     }
     
     func setInfoCardVisibility(type: InstanceType, visible: Bool) {
@@ -57,4 +61,11 @@ class PreferencesViewModel: ObservableObject {
         preferenceStore.updateBottomBarTabs(tabs: tabs)
     }
     
+    func markReleaseNotesAsSeen() {
+        preferenceStore.markReleaseNotesAsSeen()
+    }
+    
+    func toggleUseServiceNavLogos() {
+        preferenceStore.toggleUseServiceNavLogos()
+    }
 }

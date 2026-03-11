@@ -21,6 +21,7 @@ struct AddMovieForm: View {
     @State private var selectedMinimumAvailability: MediaStatus = .announced
     @State private var selectedQualityProfileId: Int32? = nil
     @State private var selectedRootFolderId: Int32? = nil
+    @State private var selectedTags: Set<Int> = Set()
     
     private let selectableStatuses: [MediaStatus] = [
         .announced,
@@ -78,6 +79,17 @@ struct AddMovieForm: View {
                     }
                 }
                 
+                if tags.count > 0 {
+                    NavigationLink {
+                        TagSelectionView(tags: tags, selectedTags: $selectedTags)
+                    } label: {
+                        LabeledContent(
+                            MR.strings().tags.localized(),
+                            value: MR.plurals().tag_count.localized(selectedTags.count)
+                        )
+                    }
+                }
+                
                 if selectedRootFolderId != nil {
                     Picker(MR.strings().root_folder.localized(), selection: $selectedRootFolderId) {
                         ForEach(rootFolders, id: \.self) { rootFolder in
@@ -105,7 +117,13 @@ struct AddMovieForm: View {
             Button {
                 Task {
                     if let profileId = selectedQualityProfileId, let path = selectedRootFolderPath {
-                        let newMovie = movie.doCopyForCreation(monitored: isMonitored, minimumAvailability: selectedMinimumAvailability, qualityProfileId: profileId, rootFolderPath: path)
+                        let newMovie = movie.doCopyForCreation(
+                            monitored: isMonitored,
+                            minimumAvailability: selectedMinimumAvailability,
+                            qualityProfileId: profileId,
+                            rootFolderPath: path,
+                            tags: Array(selectedTags.map { $0.asKotlinInt })
+                        )
                         onAddItem(newMovie)
                     }
                 }

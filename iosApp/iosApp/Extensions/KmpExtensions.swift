@@ -20,6 +20,12 @@ extension Int32 {
     }
 }
 
+extension Int {
+    var asKotlinInt: KotlinInt {
+        return KotlinInt(int: Int32(self))
+    }
+}
+
 extension Bool {
     var asKotlinBool: KotlinBoolean {
         return KotlinBoolean(bool: self)
@@ -101,5 +107,25 @@ extension ArrDiskSpace: @retroactive Identifiable {
 extension ArrHealth: @retroactive Identifiable {
     public var id: String {
         return "\(String(describing: self.source)) \(self.type.name)"
+    }
+}
+
+extension Shared.ImageResource {
+    func toImage(renderingMode: Image.TemplateRenderingMode = .template) -> Image {
+        if let uiImage = self.toUIImage() {
+            let scaledImage = uiImage.scaleToTabBarSize()
+            return Image(uiImage: scaledImage)
+                .renderingMode(renderingMode)
+        } else {
+            return Image(systemName: "exclamationmark.triangle")
+        }
+    }
+    
+    var systemName: String? {
+        let description = self.description
+        if description.contains("system:") {
+            return description.components(separatedBy: "system:").last?.trimmingCharacters(in: .whitespaces)
+        }
+        return nil
     }
 }

@@ -24,6 +24,7 @@ struct EditSeriesSheet: View {
     @State private var seriesType: SeriesType
     @State private var seasonFolders: Bool
     @State private var rootFolder: String
+    @State private var selectedTags: Set<Int>
     
     @State private var moveFiles: Bool = false
     
@@ -45,6 +46,7 @@ struct EditSeriesSheet: View {
         self.seriesType = item.seriesType
         self.seasonFolders = item.seasonFolder
         self.rootFolder = item.rootFolderPath ?? ""
+        self.selectedTags = Set(item.tags.map(\.intValue))
     }
     
     var body: some View {
@@ -62,6 +64,16 @@ struct EditSeriesSheet: View {
                     Picker(MR.strings().quality_profile.localized(), selection: $qualityProfileId) {
                         ForEach(qualityProfiles, id: \.id) { qp in
                             Text(qp.name ?? "").tag(qp.id)
+                        }
+                    }
+                    if tags.count > 0 {
+                        NavigationLink {
+                            TagSelectionView(tags: tags, selectedTags: $selectedTags)
+                        } label: {
+                            LabeledContent(
+                                MR.strings().tags.localized(),
+                                value: MR.plurals().tag_count.localized(selectedTags.count)
+                            )
                         }
                     }
                 }
@@ -98,7 +110,15 @@ struct EditSeriesSheet: View {
                 
                 ToolbarItem(placement: .primaryAction) {
                     Button {
-                        let newSeries = item.doCopyForEdit(monitored: monitored, monitorNewSeasons: monitorNewSeasons ? .all : .none, qualityProfileId: qualityProfileId, seriesType: seriesType, seasonFolder: seasonFolders, rootFolderPath: rootFolder)
+                        let newSeries = item.doCopyForEdit(
+                            monitored: monitored,
+                            monitorNewSeasons: monitorNewSeasons ? .all : .none,
+                            qualityProfileId: qualityProfileId,
+                            seriesType: seriesType,
+                            seasonFolder: seasonFolders,
+                            rootFolderPath: rootFolder,
+                            tags: Array(selectedTags.map { $0.asKotlinInt })
+                        )
                         onEditItem(newSeries, moveFiles && canMove)
                     } label: {
                         if editInProgress {

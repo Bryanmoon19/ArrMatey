@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.NewReleases
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -20,18 +21,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dnfapps.arrmatey.BuildConfig
-import com.dnfapps.arrmatey.R
 import com.dnfapps.arrmatey.shared.MR
 import com.dnfapps.arrmatey.ui.components.AppIcon
 import com.dnfapps.arrmatey.utils.mokoString
+import dev.icerock.moko.resources.compose.painterResource
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun AboutCard(
+    onFeatureRequestClick: () -> Unit,
     onBugReportClick: () -> Unit,
     onGitHubClick: () -> Unit,
     onDonateClick: () -> Unit,
@@ -92,6 +93,18 @@ fun AboutCard(
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
                 AssistChip(
+                    onClick = onFeatureRequestClick,
+                    label = { Text(mokoString(MR.strings.feature_request)) },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.NewReleases,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+                AssistChip(
                     onClick = onDonateClick,
                     label = { Text(mokoString(MR.strings.donate)) },
                     leadingIcon = {
@@ -109,7 +122,7 @@ fun AboutCard(
                     label = { Text(mokoString(MR.strings.github)) },
                     leadingIcon = {
                         Icon(
-                            painter = painterResource(id = R.drawable.ic_github),
+                            painter = painterResource(MR.images.github),
                             contentDescription = null,
                             modifier = Modifier.size(18.dp)
                         )
