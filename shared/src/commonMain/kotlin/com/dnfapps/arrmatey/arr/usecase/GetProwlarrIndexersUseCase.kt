@@ -21,12 +21,15 @@ class GetProwlarrIndexersUseCase(
 
         when (val result = repository.getIndexers()) {
             is NetworkResult.Success -> emit(ProwlarrIndexersState.Success(result.data))
-            is NetworkResult.Error -> emit(
-                ProwlarrIndexersState.Error(
-                    message = result.message ?: "Failed to fetch indexers",
-                    type = if (result.code == null) ErrorType.Network else ErrorType.Http
+            is NetworkResult.Error -> {
+                println("[Prowlarr] Error fetching indexers: code=${result.code} message=${result.message} cause=${result.cause}")
+                emit(
+                    ProwlarrIndexersState.Error(
+                        message = result.message ?: result.cause?.let { "${it::class.simpleName}: ${it.message}" } ?: "Failed to fetch indexers",
+                        type = if (result.code == null) ErrorType.Network else ErrorType.Http
+                    )
                 )
-            )
+            }
             is NetworkResult.Loading -> emit(ProwlarrIndexersState.Loading)
         }
     }

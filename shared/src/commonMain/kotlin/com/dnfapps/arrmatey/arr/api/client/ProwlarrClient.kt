@@ -21,13 +21,25 @@ class ProwlarrClient(
 ) : KoinComponent {
 
     private val baseUrl: String
-        get() = "${instance.getEffectiveBaseUrl()}/${instance.type.apiBase}"
+        get() {
+            val cleanUrl = instance.getEffectiveBaseUrl().trim().trimEnd('|', '/', ' ')
+            val apiBase = instance.type.apiBase.trim().trimStart('/', ' ')
+            return "$cleanUrl/$apiBase"
+        }
 
-    suspend fun testConnection(): NetworkResult<Unit> =
-        httpClient.safeGet("$baseUrl/${instance.type.testEndpoint}")
+    suspend fun testConnection(): NetworkResult<Unit> {
+        val url = "$baseUrl/${instance.type.testEndpoint}"
+        println("[ProwlarrClient] testConnection() URL: $url")
+        return httpClient.safeGet(url)
+    }
 
-    suspend fun getIndexers(): NetworkResult<List<ProwlarrIndexer>> =
-        httpClient.safeGet("$baseUrl/indexer")
+    suspend fun getIndexers(): NetworkResult<List<ProwlarrIndexer>> {
+        val url = "$baseUrl/indexer"
+        println("[ProwlarrClient] getIndexers() URL: $url")
+        println("[ProwlarrClient] instance.url: ${instance.url}")
+        println("[ProwlarrClient] instance.apiKey: ${instance.apiKey.take(4)}...")
+        return httpClient.safeGet(url)
+    }
 
     suspend fun getIndexerStatus(): NetworkResult<List<IndexerStatus>> =
         httpClient.safeGet("$baseUrl/indexerStatus")

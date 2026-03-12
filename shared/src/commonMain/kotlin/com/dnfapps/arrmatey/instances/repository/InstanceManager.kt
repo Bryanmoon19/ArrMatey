@@ -12,6 +12,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -83,8 +84,8 @@ class InstanceManager(
 
     fun getSelectedArrRepository(type: InstanceType): Flow<ArrInstanceRepository?> =
         instanceRepository.observeSelectedInstance(type)
-            .map { instance ->
-                instance?.let { getArrRepository(it.id) }
+            .combine(_instanceRepositories) { instance, repos ->
+                instance?.let { repos[it.id] as? ArrInstanceRepository }
             }
 
     fun getSelectedSeerrRepository(): Flow<SeerrInstanceRepository?> = flow { emit(null) }
@@ -95,8 +96,8 @@ class InstanceManager(
 
     fun getSelectedProwlarrRepository(): Flow<ProwlarrInstanceRepository?> =
         instanceRepository.observeSelectedInstance(InstanceType.Prowlarr)
-            .map { instance ->
-                instance?.let { getProwlarrRepository(it.id) }
+            .combine(_instanceRepositories) { instance, repos ->
+                instance?.let { repos[it.id] as? ProwlarrInstanceRepository }
             }
 
     fun getAllRepositories(): List<InstanceScopedRepository> {
@@ -113,9 +114,8 @@ class InstanceManager(
 
     fun repositoriesByType(type: InstanceType): Flow<List<InstanceScopedRepository>> =
         instanceRepository.observeInstancesByType(type)
-            .map { instances ->
-                val current = _instanceRepositories.value
-                instances.mapNotNull { current[it.id] }
+            .combine(_instanceRepositories) { instances, repos ->
+                instances.mapNotNull { repos[it.id] }
             }
 
     fun getRepositoriesByType(type: InstanceType): List<InstanceScopedRepository> {

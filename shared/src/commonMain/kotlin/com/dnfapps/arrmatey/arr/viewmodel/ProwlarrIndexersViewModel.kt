@@ -49,8 +49,10 @@ class ProwlarrIndexersViewModel(
         viewModelScope.launch {
             getProwlarrInstanceRepositoryUseCase
                 .observeSelected()
+                .also { println("[Prowlarr] Starting to observe selected repository") }
                 .filterNotNull()
                 .collectLatest { repository ->
+                    println("[Prowlarr] Got repository for instance: id=${repository.instance.id} url=${repository.instance.url}")
                     currentRepository = repository
                     loadData(repository)
                 }
